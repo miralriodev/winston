@@ -9,7 +9,6 @@ const jwt = require('jsonwebtoken');
 // Configuration imports
 const { admin, db } = require('./config/firebase');
 const routes = require('./routes/route');
-const serviceAccount = require('./config/serviceAccountKey.json');
 
 // Logging
 const winston = require('winston');
