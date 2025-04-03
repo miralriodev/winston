@@ -150,9 +150,41 @@ router.get('/getInfo', (req, res) => {
     });
 });
 
+// Enhanced logs endpoint
+router.get('/logs', async (req, res) => {
+  try {
+    const logsSnapshot = await db.collection('logs').get();
+    const logs = [];
+    
+    logsSnapshot.forEach(doc => {
+      const data = doc.data();
+      logs.push({
+        id: doc.id,
+        timestamp: data.timestamp,
+        method: data.method,
+        path: data.path,
+        status: data.status,
+        responseTime: data.responseTime,
+        serverId: data.serverId || 1,
+        logLevel: data.logLevel,
+        ip: data.ip,
+        userAgent: data.userAgent,
+        protocol: data.protocol,
+        memoryUsage: data.system?.memoryUsage || {},
+        environment: data.system?.environment,
+        body: data.body,
+        query: data.query
+      });
+    });
 
+    // Sort by timestamp (most recent first)
+    logs.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    res.status(200).json(logs);
+  } catch (error) {
+    console.error('Error fetching logs:', error);
+    res.status(500).json({ error: 'Failed to fetch logs' });
+  }
+});
 
-
-
-
-module.exports = router
+module.exports = router;

@@ -23,11 +23,12 @@ dotenv.config();
 // Constants
 const PORT = process.env.PORT || 3001;
 const JWT_SECRET = process.env.JWT_SECRET || 'miralhu';
+const SERVER_ID = 1;
 
 // ===== MIDDLEWARE SETUP =====
 // Rate limiting configuration
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
+    windowMs: 10 * 60 * 1000, // 10 minutes
     max: 100, // Limit each IP to 100 requests per window
     message: 'Too many requests from this IP, please try again after an hour.'
 });
@@ -44,15 +45,6 @@ const logger = winston.createLogger({
         new winston.transports.Console()
     ]
 });
-
-// ===== FIREBASE INITIALIZATION =====
-if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount)
-    });
-} else {
-    admin.app();
-}
 
 // ===== EXPRESS APP SETUP =====
 const app = express();
@@ -94,6 +86,7 @@ const requestLogger = (req, res, next) => {
             userAgent: req.get('user-agent'),
             protocol: req.protocol,
             hostname: req.hostname,
+            serverId: SERVER_ID,
             system: {
                 nodeVersion: process.version,
                 environment: process.env.NODE_ENV || 'development',
@@ -102,7 +95,7 @@ const requestLogger = (req, res, next) => {
             }
         };
         
-        logger.log(logLevel, 'Request completed', logData);
+        // logger.log(logLevel, 'Request completed', logData);
 
         try {
             await db.collection('logs').add(logData);   
@@ -137,18 +130,6 @@ app.use(requestLogger);
 // API routes
 app.use('/api', routes);
 
-// Direct routes
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-
-    // SIMULACION DE AUTENTICACION DEBERIA VALIDARSE CON UNA BASE DE DATOS
-    if (username === 'admin' && password === 'admin') {
-        const token = jwt.sign({ username }, JWT_SECRET, { expiresIn: '2m' });
-        res.status(200).json({ message: 'Login successful', token });
-    } else {
-        res.status(401).json({ message: 'Invalid credentials' });
-    }
-});
 
 // ===== ERROR HANDLING =====
 // 404 handler
