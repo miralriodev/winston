@@ -9,6 +9,7 @@ const jwt = require('jsonwebtoken');
 // Configuration imports
 const { admin, db } = require('./config/firebase');
 const routes = require('./routes/route');
+const passwordResetRoutes = require('./routes/password-reset');
 
 // Logging
 const winston = require('winston');
@@ -21,7 +22,7 @@ const rateLimit = require('express-rate-limit');
 dotenv.config();
 
 // Constants
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 const JWT_SECRET = process.env.JWT_SECRET || 'miralhu';
 const SERVER_ID = 1;
 
@@ -73,25 +74,31 @@ const requestLogger = (req, res, next) => {
         const responseTime = Date.now() - startTime;
         const logData = {
             logLevel,
-            timestamp: new Date(),
+            timestamp: admin.firestore.Timestamp.fromDate(new Date()),
             method: req.method,
             url: req.url,
             path: req.path,
             query: req.query || {},
             params: req.params || {},
-            status: statusCode || res.statusCode,
-            responseTime,
+            status: Number(statusCode || res.statusCode),
+            responseTime: Number(responseTime),
             body: req.body,
             ip: req.ip || req.connection.remoteAddress,
             userAgent: req.get('user-agent'),
             protocol: req.protocol,
             hostname: req.hostname,
-            serverId: SERVER_ID,
+            serverId: Number(SERVER_ID),
             system: {
                 nodeVersion: process.version,
                 environment: process.env.NODE_ENV || 'development',
-                pid: process.pid,
-                memoryUsage: process.memoryUsage()
+                pid: Number(process.pid),
+                memoryUsage: {
+                    heapTotal: Number(process.memoryUsage().heapTotal),
+                    heapUsed: Number(process.memoryUsage().heapUsed),
+                    external: Number(process.memoryUsage().external),
+                    rss: Number(process.memoryUsage().rss),
+                    arrayBuffers: Number(process.memoryUsage().arrayBuffers || 0)
+                }
             }
         };
         
@@ -129,6 +136,7 @@ app.use(requestLogger);
 // ===== ROUTES =====
 // API routes
 app.use('/api', routes);
+app.use('/api/', passwordResetRoutes);
 
 
 // ===== ERROR HANDLING =====

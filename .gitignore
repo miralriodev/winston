@@ -7,3 +7,4 @@ dist/
 
 # Firebase credentials
 config/serviceAccountKey.json
+config/serviceAccountKey-stroke.json
